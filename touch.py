@@ -8,7 +8,6 @@ import uinput
 import pyudev
 import os
 import syslog
-import pyautogui
 
 # calibration file location
 calib_file = "/etc/pointercal"
@@ -61,8 +60,8 @@ def read_and_emulate_mouse(deviceFound):
         device = uinput.Device([
             uinput.BTN_LEFT,
             uinput.BTN_RIGHT,
-            uinput.ABS_X + (0, scx, 0, 0),
-            uinput.ABS_Y + (0, scy, 0, 0),
+            uinput.ABS_X + (0, 1280, 0, 0),
+            uinput.ABS_Y + (0, 768, 0, 0),
             ])
         cal_data = read_pointercal_calib_file()
         lastx = 0
@@ -91,22 +90,14 @@ def read_and_emulate_mouse(deviceFound):
                 # calc real touch point
                 dp = display_touch_point(cal_data, [x,y])
                 #dp[0] - LCD X , dp[1] - LCD Y
-
-                #device.emit(uinput.ABS_X, dp[0])
-                #device.emit(uinput.ABS_Y, dp[1])
-                #device.syn()
-                (curx, cury) = pyautogui.position()
-                print('cursor x: ' + str(curx) + 'cursor y: ' + str(cury))
-                print('last x: ' + str(lastx) + 'last Y: ' + str(lasty))
-                print('now x: ' +  str(dp[0]) + 'now Y: ' + str(dp[1]))
-
-                device.emit(uinput.ABS_X, dp[0]) # - curx)
-                device.emit(uinput.ABS_Y, dp[1]) # - cury)
+                device.emit(uinput.ABS_X, dp[0])
+                device.syn()
+                device.emit(uinput.ABS_Y, dp[1])
                 lastx = dp[0]
                 lasty = dp[1]
 
                 if not clicked:
-#                    print("Left click")
+#                   print("Left click")
                     device.emit(uinput.BTN_LEFT, 1)
                     device.syn()
                     clicked = True
@@ -116,7 +107,7 @@ def read_and_emulate_mouse(deviceFound):
                 duration = time.time() - startTime
                 movement = math.sqrt(pow(x - lastX, 2) + pow(y - lastY, 2))
 
-                if clicked and (not rightClicked) and (duration > 1) and (movement < 20):
+                if clicked and (not rightClicked) and (duration > 1) and (movement < 70):
  #                   print("Right click")
                     device.emit(uinput.BTN_RIGHT, 1)
                     device.syn()
