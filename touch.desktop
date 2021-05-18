@@ -1,0 +1,4 @@
+[Desktop Entry]
+Type=Application
+Name=touch
+Exec=sudo /usr/bin/python /home/pi/tslib/rpi-5inch-hdmi-touchscreen-driver/touch.py
