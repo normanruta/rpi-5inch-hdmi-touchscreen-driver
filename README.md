@@ -328,6 +328,6 @@ Tested on Raspbian: ```2015-09-24-raspbian-jessie.img``` with all updates to now
 # Credits
 * tslib author https://github.com/kergoth/tslib
 * author of https://github.com/derekhe/waveshare-7inch-touchscreen-driver for discovering how the controller talks
-
+* author of original repository https://github.com/saper-2/rpi-5inch-hdmi-touchscreen-driver
 * missing device.syn() thanks to https://gitlab.freedesktop.org/libinput/libinput/-/issues/203
 * missing ABS parameters thanks to https://www.reddit.com/r/Python/comments/k6phha/guide_how_to_simulate_absolute_mouse_movement/
