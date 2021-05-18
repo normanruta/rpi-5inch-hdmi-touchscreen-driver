@@ -8,6 +8,7 @@ import uinput
 import pyudev
 import os
 import syslog
+import pyautogui
 
 # calibration file location
 calib_file = "/etc/pointercal"
@@ -20,7 +21,7 @@ def display_touch_point(c, pt):
     dy = ( c[5] + c[3]*pt[0] + c[4]*pt[1] ) / c[6]; # samp->y =    ( lin->a[5] + lin->a[3]*xtemp + lin->a[4]*ytemp ) / lin->a[6];
     #if (info->dev->res_x && lin->cal_res_x) samp->x = samp->x * info->dev->res_x / lin->cal_res_x;
     #if (info->dev->res_y && lin->cal_res_y) samp->y = samp->y * info->dev->res_y / lin->cal_res_y;
-    
+
     return [int(dx),int(dy)]
 
 # read calibration data from pointercal created by ts_calibrate (from tslib)
@@ -39,7 +40,8 @@ def read_pointercal_calib_file():
     # file is built from single line, values are space separated, there is 9 values
     try:
         with open(calib_file,'r') as ff:
-            a1,a2,a3,a4,a5,a6,a7,scx,scy = ff.readline().split()
+    #ff = open(calib_file,'r')
+                a1,a2,a3,a4,a5,a6,a7,scx,scy = ff.readline().split()
     except:
         syslog.syslog(syslog.LOG_WARNING,'TouchDriver: No calibration file: {0}'.format(calib_file))
         print("No tslib calibration file, using defaults.")
@@ -48,8 +50,8 @@ def read_pointercal_calib_file():
     print("Screen dims: X=",scx," Y=", scy)
     syslog.syslog(syslog.LOG_INFO,'TouchDriver: Using calibration data A1..A7: {0} {1} {2} {3} {4} {5} {6}'.format(a1,a2,a3,a4,a5,a6,a7))
     return [int(a1),int(a2),int(a3),int(a4),int(a5),int(a6),int(a7)]
-    
-    
+
+
 
 # Wait and find devices
 def read_and_emulate_mouse(deviceFound):
@@ -59,11 +61,14 @@ def read_and_emulate_mouse(deviceFound):
         device = uinput.Device([
             uinput.BTN_LEFT,
             uinput.BTN_RIGHT,
-            uinput.ABS_X,
-            uinput.ABS_Y,
-        ])
+            uinput.ABS_X + (0, scx, 0, 0),
+            uinput.ABS_Y + (0, scy, 0, 0),
+            ])
         cal_data = read_pointercal_calib_file()
-        
+        lastx = 0
+        lasty = 0
+
+
         clicked = False
         rightClicked = False
         (lastX, lastY) = (0, 0)
@@ -73,24 +78,37 @@ def read_and_emulate_mouse(deviceFound):
             try:
                 b = f.read(22)
                 (tag, btnLeft, x, y) = struct.unpack_from('>c?HH', b)
-                print(btnLeft, x, y)
+#                print(btnLeft, x, y)
+
             except:
                 print('failed to read from deviceFound' + str(deviceFound))
                 syslog.syslog(syslog.LOG_WARNING,'TouchDriver: Failed to read from {0}'.format(deviceFound))
                 return
-            
+
             time.sleep(0.01)
 
             if btnLeft:
                 # calc real touch point
                 dp = display_touch_point(cal_data, [x,y])
-                # dp[0] - LCD X , dp[1] - LCD Y
-                device.emit(uinput.ABS_X, dp[0], True)
-                device.emit(uinput.ABS_Y, dp[1], True)
+                #dp[0] - LCD X , dp[1] - LCD Y
+
+                #device.emit(uinput.ABS_X, dp[0])
+                #device.emit(uinput.ABS_Y, dp[1])
+                #device.syn()
+                (curx, cury) = pyautogui.position()
+                print('cursor x: ' + str(curx) + 'cursor y: ' + str(cury))
+                print('last x: ' + str(lastx) + 'last Y: ' + str(lasty))
+                print('now x: ' +  str(dp[0]) + 'now Y: ' + str(dp[1]))
+
+                device.emit(uinput.ABS_X, dp[0]) # - curx)
+                device.emit(uinput.ABS_Y, dp[1]) # - cury)
+                lastx = dp[0]
+                lasty = dp[1]
 
                 if not clicked:
-                    print("Left click")
+#                    print("Left click")
                     device.emit(uinput.BTN_LEFT, 1)
+                    device.syn()
                     clicked = True
                     startTime = time.time()
                     (lastX, lastY) = (x, y)
@@ -99,15 +117,18 @@ def read_and_emulate_mouse(deviceFound):
                 movement = math.sqrt(pow(x - lastX, 2) + pow(y - lastY, 2))
 
                 if clicked and (not rightClicked) and (duration > 1) and (movement < 20):
-                    print("Right click")
+ #                   print("Right click")
                     device.emit(uinput.BTN_RIGHT, 1)
+                    device.syn()
                     device.emit(uinput.BTN_RIGHT, 0)
+                    device.syn()
                     rightClicked = True
             else:
-                print("Release")
+  #              print("Release")
                 clicked = False
                 rightClicked = False
                 device.emit(uinput.BTN_LEFT, 0)
+                device.syn()
 
 
 if __name__ == "__main__":
@@ -115,7 +136,7 @@ if __name__ == "__main__":
     os.system("chmod 666 /dev/hidraw*")
     os.system("chmod 666 /dev/uinput*")
     syslog.syslog(syslog.LOG_INFO,'TouchDriver: Starting...')
-    
+
     while True:
         # try:
         print("Waiting for device")
