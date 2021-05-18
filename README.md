@@ -314,6 +314,8 @@ If there is no errors then driver is installed and should be already running :sm
 
 If not running then start it with ```sudo /etc/init.d/touch.sh start```
 
+Alternatively to # 6. just copy the touch.desktop to ~/home/.config/autostart (Raspbian distro) and reboot. This python needs full desktop environment and since it is not being provided while starting as a service it is just not working.
+
 ========================================
 # About
 
