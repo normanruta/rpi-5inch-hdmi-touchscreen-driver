@@ -271,7 +271,7 @@ pi@raspiv2 ~ $ cat /etc/pointercal
 13679 16 -1843476 -48 8414 -1707140 65536 800 480pi@raspiv2 ~ $
 ```
 
-<u>Info:</u> Last 2 values 800 and 480 are screen size.
+<u>Info:</u> Last 4 values 800 and 480 are screen size and some 0 0 <- get rid of last two otherwise none of python apps will run. Apps are expecting fewer values.
 
 In first terminal hit few times in succession ```Ctrl+C``` to stop driver script.
 
